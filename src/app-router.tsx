@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import AuthLayout from "./auth/layout/auth-layout";
 import { LoginPage } from "./auth/pages/login-page";
 import { RegisterPage } from "./auth/pages/register-page";
-// import ChatLayout from "./chat/layout/chat-layout";
-import ChatPage from "./chat/pages/chat-page";
 import { sleep } from "./lib/sleep";
 
 const ChatLayout = lazy(async () => {
   await sleep(1000);
   return import("./chat/layout/chat-layout");
 });
+
+const ChatPage = lazy(() => import("./chat/pages/chat-page"));
 
 export const AppRouter = () => {
   return (

@@ -13,6 +13,7 @@ interface Message {
 
 export default function ChatPage() {
   const { clientId } = useParams();
+  console.log(clientId);
 
   const [input, setInput] = useState("");
   const [messages] = useState<Message[]>([

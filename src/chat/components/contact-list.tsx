@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getClients } from "@/fake/fake-dta";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router";
 
@@ -43,15 +44,27 @@ const ContactList = () => {
               <NavLink key={contact.id} to={`/chat/${contact.id}`}>
                 {({ isActive }) => (
                   <Button
+                    type="button"
                     variant={isActive ? "secondary" : "ghost"}
                     className="w-full justify-start cursor-pointer"
                   >
                     <div
-                      className={`h-6 w-6 rounded-full bg-gray-400 mr-2 flex-shrink-0 flex items-center justify-center text-white text-xs`}
+                      className={cn(
+                        `h-6 w-6 rounded-full bg-gray-400 mr-2 flex-shrink-0 flex items-center justify-center text-white text-xs transition-all duration-300`,
+                        isActive && "bg-blue-300 text-blue-600 font-semibold"
+                      )}
                     >
                       {contact.name.charAt(0)}
+                      {contact.name.charAt(1)}
                     </div>
-                    <span className="text-gray-600">{contact.name}</span>
+                    <span
+                      className={cn(
+                        "transition-all duration-300 text-gray-600",
+                        isActive && "text-blue-600 font-semibold"
+                      )}
+                    >
+                      {contact.name}
+                    </span>
                   </Button>
                 )}
               </NavLink>

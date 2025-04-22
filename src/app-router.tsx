@@ -4,6 +4,7 @@ import AuthLayout from "./auth/layout/auth-layout";
 import { LoginPage } from "./auth/pages/login-page";
 import { RegisterPage } from "./auth/pages/register-page";
 import { sleep } from "./lib/sleep";
+import PrivateRoute from "./auth/components/private-route";
 
 const ChatLayout = lazy(async () => {
   await sleep(1000);
@@ -32,7 +33,9 @@ export const AppRouter = () => {
                 </div>
               }
             >
-              <ChatLayout />
+              <PrivateRoute isAuthenticated={true}>
+                <ChatLayout />
+              </PrivateRoute>
             </Suspense>
           }
         >

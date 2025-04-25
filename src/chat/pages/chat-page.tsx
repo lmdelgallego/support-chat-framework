@@ -1,14 +1,16 @@
-import { useState } from "react";
+import React, { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Copy, Download, ThumbsUp, ThumbsDown, Send } from "lucide-react";
 import { useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { getClientMessages } from "@/fake/fake-dta";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getClientMessages, sendMessage } from "@/fake/fake-dta";
+import { Message } from "../interfaces/chat.interface";
 
 export default function ChatPage() {
   const { clientId } = useParams();
+  const queryClient = useQueryClient();
 
   const [input, setInput] = useState("");
 
@@ -16,6 +18,28 @@ export default function ChatPage() {
     queryKey: ["messages", clientId],
     queryFn: () => getClientMessages(clientId ?? ""),
   });
+
+  const { mutate: sendMessageMutation } = useMutation({
+    mutationFn: sendMessage,
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(["messages", clientId], (oldMessages: Message[]) => [
+        ...oldMessages,
+        newMessage,
+      ]);
+    },
+  });
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessageMutation({
+      content: input,
+      clientId: clientId ?? "",
+      sender: "agent",
+      createdAt: new Date(),
+    });
+    setInput("");
+  };
 
   if (isLoading) {
     return (
@@ -34,7 +58,7 @@ export default function ChatPage() {
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div key={index} className="w-full">
-              {message.sender === "agent" ? (
+              {message.sender === "client" ? (
                 // Agent message - left aligned
                 <div className="flex gap-2 max-w-[80%]">
                   <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0" />
@@ -94,7 +118,7 @@ export default function ChatPage() {
         </div>
       )}
       <div className="p-4 border-t">
-        <div className="flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Textarea
             placeholder="Type a message as a customer"
             value={input}
@@ -105,7 +129,7 @@ export default function ChatPage() {
             <Send className="h-4 w-4" />
             <span>Send</span>
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -18,15 +18,15 @@ const NoChatSelectedPage = lazy(() => import("./chat/pages/no-chat-selected-page
 
 export const AppRouter = () => {
 
-  const { data: user, isLoading, isError, error } = useQuery({
-    queryKey: ['user'],
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["user"],
     queryFn: () => {
-      const token = localStorage.getItem('token');
-      if(!token) throw new Error('Not authenticated');
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
 
-      return checkAuth(token)
+      return checkAuth(token);
     },
-    retry: 0
+    retry: 0,
   });
 
 

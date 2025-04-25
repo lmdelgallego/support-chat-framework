@@ -1,39 +1,56 @@
-import { useState } from "react";
+import React, { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Copy, Download, ThumbsUp, ThumbsDown, Send } from "lucide-react";
 import { useParams } from "react-router";
-
-interface Message {
-  role: "agent" | "user";
-  content: string;
-  timestamp: string;
-}
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getClientMessages, sendMessage } from "@/fake/fake-dta";
+import { Message } from "../interfaces/chat.interface";
 
 export default function ChatPage() {
   const { clientId } = useParams();
-  console.log(clientId);
+  const queryClient = useQueryClient();
 
   const [input, setInput] = useState("");
-  const [messages] = useState<Message[]>([
-    {
-      role: "agent",
-      content: "Hello, I am a generative AI agent. How may I assist you today?",
-      timestamp: "4:08:28 PM",
+
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ["messages", clientId],
+    queryFn: () => getClientMessages(clientId ?? ""),
+  });
+
+  const { mutate: sendMessageMutation } = useMutation({
+    mutationFn: sendMessage,
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(["messages", clientId], (oldMessages: Message[]) => [
+        ...oldMessages,
+        newMessage,
+      ]);
     },
-    {
-      role: "user",
-      content: "Hi, I'd like to check my bill.",
-      timestamp: "4:08:37 PM",
-    },
-    {
-      role: "agent",
-      content:
-        "Please hold for a second.\n\nOk, I can help you with that\n\nI'm pulling up your current bill information\n\nYour current bill is $150, and it is due on August 31, 2024.\n\nIf you need more details, feel free to ask!",
-      timestamp: "4:08:37 PM",
-    },
-  ]);
+  });
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessageMutation({
+      content: input,
+      clientId: clientId ?? "",
+      sender: "agent",
+      createdAt: new Date(),
+    });
+    setInput("");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-muted/5">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-sm text-muted-foreground">Loading messages...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col">
@@ -41,14 +58,16 @@ export default function ChatPage() {
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div key={index} className="w-full">
-              {message.role === "agent" ? (
+              {message.sender === "client" ? (
                 // Agent message - left aligned
                 <div className="flex gap-2 max-w-[80%]">
                   <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0" />
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">NexTalk</span>
-                      <span className="text-sm text-muted-foreground">{message.timestamp}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {message.createdAt.toLocaleString()}
+                      </span>
                     </div>
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -74,7 +93,9 @@ export default function ChatPage() {
                 <div className="flex flex-col items-end">
                   <div className="text-right mb-1">
                     <span className="text-sm font-medium mr-2">G5</span>
-                    <span className="text-sm text-muted-foreground">{message.timestamp}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {message.createdAt.toLocaleString()}
+                    </span>
                   </div>
                   <div className="bg-black text-white p-3 rounded-lg max-w-[80%]">
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -85,8 +106,19 @@ export default function ChatPage() {
           ))}
         </div>
       </ScrollArea>
+      {messages.length === 0 && (
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
+          <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+            <Send className="h-6 w-6" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-lg font-medium">No messages yet</p>
+            <p className="text-sm">Start the conversation by sending a message</p>
+          </div>
+        </div>
+      )}
       <div className="p-4 border-t">
-        <div className="flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Textarea
             placeholder="Type a message as a customer"
             value={input}
@@ -97,7 +129,7 @@ export default function ChatPage() {
             <Send className="h-4 w-4" />
             <span>Send</span>
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   );

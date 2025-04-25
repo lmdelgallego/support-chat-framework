@@ -1,39 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getClients } from "@/fake/fake-dta";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router";
-
-const dummyContacts = [
-  {
-    id: "1",
-    initials: "G5",
-    name: "G5 Customer",
-    color: "blue",
-  },
-  {
-    id: "2",
-    initials: "JD",
-    name: "John Doe",
-    color: "green",
-  },
-  {
-    id: "3",
-    initials: "AS",
-    name: "Alice Smith",
-    color: "purple",
-  },
-  {
-    id: "4",
-    initials: "RJ",
-    name: "Robert Johnson",
-    color: "yellow",
-  },
-  {
-    id: "5",
-    initials: "EW",
-    name: "Emma Wilson",
-    color: "pink",
-  },
-];
 
 const recentContacts = [
   {
@@ -51,25 +21,50 @@ const recentContacts = [
 ];
 
 const ContactList = () => {
+  const { data: contacts, isLoading } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: () => getClients(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   return (
-    <ScrollArea className="h-[calc(100vh-64px)]">
+    <ScrollArea className="h-[calc(100vh-120px)]">
       <div className="space-y-4 p-4">
         <div className="space-y-1">
           <h3 className="px-2 text-sm font-semibold">Contacts</h3>
           <div className="space-y-1">
-            {dummyContacts.map((contact) => (
+            {isLoading && (
+              <div className="flex items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-gray-900"></div>
+                <span className="ml-3 text-sm text-gray-600">Loading contacts...</span>
+              </div>
+            )}
+
+            {contacts?.map((contact) => (
               <NavLink key={contact.id} to={`/chat/${contact.id}`}>
                 {({ isActive }) => (
                   <Button
+                    type="button"
                     variant={isActive ? "secondary" : "ghost"}
                     className="w-full justify-start cursor-pointer"
                   >
                     <div
-                      className={`h-6 w-6 rounded-full bg-${contact.color}-500 mr-2 flex-shrink-0 flex items-center justify-center text-white text-xs`}
+                      className={cn(
+                        `h-6 w-6 rounded-full bg-gray-400 mr-2 flex-shrink-0 flex items-center justify-center text-white text-xs transition-all duration-300`,
+                        isActive && "bg-blue-300 text-blue-600 font-semibold"
+                      )}
                     >
-                      {contact.initials}
+                      {contact.name.charAt(0)}
+                      {contact.name.charAt(1)}
                     </div>
-                    {contact.name}
+                    <span
+                      className={cn(
+                        "transition-all duration-300 text-gray-600",
+                        isActive && "text-blue-600 font-semibold"
+                      )}
+                    >
+                      {contact.name}
+                    </span>
                   </Button>
                 )}
               </NavLink>
